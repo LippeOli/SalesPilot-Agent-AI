@@ -1,0 +1,2 @@
+# Dependências opcionais — manutenção / geração de fixtures (não necessárias para rodar o agente)
+fpdf2>=2.7.0

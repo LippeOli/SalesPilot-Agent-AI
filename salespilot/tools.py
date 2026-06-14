@@ -1,4 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from langchain_core.tools import tool
+
+from salespilot.rag import similarity_search_formatted
+
+if TYPE_CHECKING:
+    from langchain_community.vectorstores import FAISS
 
 # ---------------------------------------------------------------------------
 # Bancos de dados fake — simula chamadas reais a sistemas externos
@@ -115,5 +124,39 @@ def atualizar_lead(nome_cliente: str, novo_status: str) -> str:
     )
 
 
-# Lista exportada para o agent.py
-TOOLS = [consultar_estoque, validar_regra_negocio, atualizar_lead]
+# Ferramentas base (sem RAG) — exportadas para o grafo padrão e para composição com RAG
+BASE_TOOLS = [consultar_estoque, validar_regra_negocio, atualizar_lead]
+
+# Alias histórico: grafo CLI sem PDFs usa apenas as ferramentas base
+TOOLS = BASE_TOOLS
+
+
+def make_buscar_documentos(vectorstore: FAISS | None):
+    """
+    Factory que injeta o vector store no closure da tool (padrão do PLANO_IMPLEMENTACAO).
+
+    Só inclua a tool retornada na lista passada a build_graph quando houver índice válido.
+    """
+
+    @tool
+    def buscar_documentos(query: str) -> str:
+        """
+        Busca trechos relevantes nos PDFs indexados (políticas, manuais, contratos).
+
+        Use quando a resposta depender do conteúdo dos documentos carregados.
+        Cite na resposta final o arquivo e a ideia dos trechos retornados.
+
+        Args:
+            query: Pergunta ou termos de busca em linguagem natural.
+
+        Returns:
+            Trechos formatados com nome do arquivo e texto.
+        """
+        if vectorstore is None:
+            return (
+                "Nenhum documento PDF foi indexado ainda. "
+                "Peça ao usuário para carregar e indexar os PDFs antes de buscar."
+            )
+        return similarity_search_formatted(vectorstore, query.strip())
+
+    return buscar_documentos

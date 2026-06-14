@@ -26,13 +26,13 @@ from langchain_core.messages import SystemMessage
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from salespilot.tools import TOOLS
+from salespilot.tools import BASE_TOOLS
 
 # ---------------------------------------------------------------------------
 # Persona do agente
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = SystemMessage(content="""
+_SYSTEM_PROMPT_BASE = """
 Você é o SalesPilot, um assistente de vendas inteligente e colaborativo.
 
 Seu papel é ser o parceiro estratégico do vendedor, ajudando-o a:
@@ -56,7 +56,29 @@ Ferramentas disponíveis:
   - consultar_estoque: verifica unidades disponíveis de um produto
   - validar_regra_negocio: aprova ou rejeita o desconto solicitado
   - atualizar_lead: registra o novo status do cliente no funil
-""")
+"""
+
+_SYSTEM_PROMPT_RAG = """
+Documentos PDF indexados:
+  - buscar_documentos: recupera trechos relevantes dos manuais/políticas carregados.
+  Quando a pergunta depender do conteúdo desses PDFs, chame buscar_documentos ANTES de concluir.
+  Na resposta final, cite explicitamente o nome do arquivo e a ideia dos trechos retornados.
+"""
+
+
+def _has_buscar_documentos(tools: list) -> bool:
+    return any(getattr(t, "name", None) == "buscar_documentos" for t in tools)
+
+
+def build_system_message(tools: list) -> SystemMessage:
+    text = _SYSTEM_PROMPT_BASE
+    if _has_buscar_documentos(tools):
+        text += _SYSTEM_PROMPT_RAG
+    return SystemMessage(content=text)
+
+
+# Mensagem padrão (sem RAG) para compatibilidade com imports antigos
+SYSTEM_PROMPT = build_system_message(BASE_TOOLS)
 
 
 # ---------------------------------------------------------------------------
@@ -95,20 +117,28 @@ def build_llm():
 # Construção do grafo
 # ---------------------------------------------------------------------------
 
-def build_graph():
-    """Compila e retorna o app LangGraph do SalesPilot."""
+def build_graph(tools: list | None = None):
+    """
+    Compila e retorna o app LangGraph do SalesPilot.
+
+    Args:
+        tools: Lista de ferramentas (ex.: BASE_TOOLS + [make_buscar_documentos(vs)]).
+               Se None, usa apenas BASE_TOOLS (comportamento CLI legado sem RAG).
+    """
+    tool_list = BASE_TOOLS if tools is None else tools
     llm = build_llm()
-    llm_with_tools = llm.bind_tools(TOOLS)
+    llm_with_tools = llm.bind_tools(tool_list)
+    system_message = build_system_message(tool_list)
 
     def agent_node(state: MessagesState):
-        messages = [SYSTEM_PROMPT] + state["messages"]
+        messages = [system_message] + state["messages"]
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
     graph = StateGraph(MessagesState)
 
     graph.add_node("agent", agent_node)
-    graph.add_node("tools", ToolNode(TOOLS))
+    graph.add_node("tools", ToolNode(tool_list))
 
     graph.add_edge(START, "agent")
     graph.add_conditional_edges("agent", tools_condition)
