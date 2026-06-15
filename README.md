@@ -48,6 +48,28 @@ No **Streamlit**, faça upload dos cinco arquivos de `docs/demo_rag/`, clique em
 
 ---
 
+## Cenário Colaborativo e Modelo 3C
+
+### O Cenário
+O SalesPilot atua em um ambiente de **vendas corporativas**. O sistema foi projetado para apoiar uma equipe de vendedores que lidam com negociações, verificação de políticas internas (descontos, garantias) e gestão de leads. 
+Em uma mesma sessão, diferentes membros da equipe (identificados por seu Nome/ID na interface) podem interagir com o agente ReAct para debater sobre um lead específico, consultar estoques, buscar informações em manuais técnicos (via RAG em PDFs) e avançar clientes no funil de vendas.
+
+### Modelo 3C de Sistemas Colaborativos
+Este projeto implementa os princípios do modelo 3C de forma explícita:
+
+1. **Comunicação (Troca de mensagens):**
+   - A interface em Streamlit atua como um chat onde múltiplos vendedores podem enviar mensagens identificadas (ex.: `[Ana - Equipe Sul] Qual o desconto máximo?`).
+   - O agente se comunica respondendo às dúvidas, justificando recusas ou confirmando aprovações com base nas ferramentas de CRM e nos PDFs.
+
+2. **Colaboração (Construção conjunta):**
+   - Os membros colaboram no processo de tomada de decisão. Um usuário pode fazer o upload dos catálogos (PDFs) e perguntar sobre especificações técnicas, enquanto outro valida a política de desconto. O avanço de um negócio é resultado do conhecimento construído coletivamente com o suporte do agente e dos documentos (RAG).
+
+3. **Coordenação (Organização de tarefas e processos):**
+   - O sistema de **"Coordenação do Funil"** (visível na barra lateral do Streamlit) gerencia o status compartilhado do fluxo de trabalho. 
+   - Ao utilizar a ferramenta `atualizar_lead`, o agente atua como um orquestrador do processo, garantindo que o status de um lead no CRM seja modificado apenas quando as regras de negócio forem respeitadas. Todos os membros visualizam o estado atualizado do funil em tempo real, organizando o esforço de vendas.
+
+---
+
 ## Como funciona — Ciclo ReAct
 
 O grafo implementa o padrão clássico **Reasoning → Acting**:

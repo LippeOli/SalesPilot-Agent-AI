@@ -25,7 +25,7 @@ if _REPO_ROOT not in sys.path:
 
 from salespilot.agent import build_graph
 from salespilot.rag import MAX_PDF_FILES, build_vectorstore_from_pdfs
-from salespilot.tools import BASE_TOOLS, make_buscar_documentos
+from salespilot.tools import BASE_TOOLS, make_buscar_documentos, _LEADS
 
 
 def _ollama_down_message() -> str:
@@ -114,6 +114,16 @@ def main() -> None:
         else:
             st.caption("Nenhum PDF indexado — o agente ainda pode usar estoque, desconto e leads.")
 
+        st.divider()
+        st.subheader("Coordenação do Funil")
+        if _LEADS:
+            for lead, status in _LEADS.items():
+                st.caption(f"**{lead.title()}**: {status}")
+        else:
+            st.caption("Nenhum lead registrado.")
+            
+        st.divider()
+
         if st.button("Limpar conversa"):
             _reset_chat()
             st.rerun()
@@ -161,6 +171,7 @@ def main() -> None:
             if final_response:
                 st.markdown(final_response)
                 st.session_state.messages.append(AIMessage(content=final_response))
+                st.rerun() # Atualiza a tela para refletir mudanças no funil (_LEADS) na barra lateral
             else:
                 st.warning("Nenhuma resposta textual foi gerada. Tente reformular a pergunta.")
 
