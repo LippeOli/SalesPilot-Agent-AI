@@ -7,6 +7,7 @@ Execute:
 
 from __future__ import annotations
 
+import sys
 import tempfile
 from pathlib import Path
 
@@ -16,6 +17,11 @@ from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage
 
 load_dotenv()
+
+# Garante imports absolutos `salespilot.*` quando o Streamlit coloca só `salespilot/` no sys.path.
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 from salespilot.agent import build_graph
 from salespilot.rag import MAX_PDF_FILES, build_vectorstore_from_pdfs
