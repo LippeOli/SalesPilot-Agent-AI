@@ -1,18 +1,7 @@
----
-config:
-  flowchart:
-    curve: linear
----
-%% O nó tools executa as ferramentas do agente; com RAG ativo inclui buscar_documentos.
-graph TD;
-	__start__([<p>__start__</p>]):::first
-	agent(agent)
-	tools(tools)
-	__end__([<p>__end__</p>]):::last
-	__start__ --> agent;
-	agent -.-> __end__;
-	agent -.-> tools;
-	tools --> agent;
-	classDef default fill:#f2f0ff,line-height:1.2
-	classDef first fill-opacity:0
-	classDef last fill:#bfb6fc
+%% SalesPilot — grafo ReAct (LangGraph). Sintaxe compatível com mermaid.live e VS Code.
+%% Equivale a: START → agent ⇄ tools → END (sem YAML/HTML/classDef da API draw_mermaid).
+flowchart TD
+    entrada([Início]) --> agente[agent]
+    agente -->|resposta final| saida([Fim])
+    agente -->|tool_calls| ferramentas[tools]
+    ferramentas --> agente

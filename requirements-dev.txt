@@ -1,2 +1,3 @@
 # Dependências opcionais — manutenção / geração de fixtures (não necessárias para rodar o agente)
 fpdf2>=2.7.0
+grandalf>=0.8  # diagrama ASCII em generate_diagram.py (print_ascii)

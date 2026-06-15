@@ -6,7 +6,7 @@ PIP    := $(VENV)/bin/pip
 
 .DEFAULT_GOAL := help
 
-.PHONY: help venv install setup env-copy run run-rag streamlit clean distclean
+.PHONY: help venv install setup env-copy run run-rag streamlit diagram clean distclean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) \
@@ -42,6 +42,10 @@ run-rag: ## CLI com RAG; defina PDFS="a.pdf b.pdf" (até 5 arquivos)
 streamlit: ## Interface web (streamlit run salespilot/streamlit_app.py)
 	@test -x "$(VENV)/bin/streamlit" || (echo "Execute: make setup"; exit 1)
 	"$(VENV)/bin/streamlit" run salespilot/streamlit_app.py
+
+diagram: ## Gera salespilot_graph.mmd (+ ASCII se grandalf; PNG se rede/mermaid.ink OK)
+	@test -x "$(PY)" || (echo "Execute: make setup"; exit 1)
+	"$(PY)" generate_diagram.py
 
 clean: ## Remove caches Python (__pycache__, .pyc)
 	@find . -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true

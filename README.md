@@ -32,7 +32,7 @@ Na pasta [`docs/demo_rag/`](docs/demo_rag/) há cinco PDFs gerados para testar o
 Para **regenerar** os arquivos (ex.: após editar o script):
 
 ```bash
-pip install -r requirements-dev.txt   # inclui fpdf2
+pip install -r requirements-dev.txt   # inclui fpdf2 e grandalf (diagrama ASCII)
 python scripts/generate_demo_pdfs.py
 ```
 
@@ -75,24 +75,14 @@ Este projeto implementa os princípios do modelo 3C de forma explícita:
 O grafo implementa o padrão clássico **Reasoning → Acting**:
 
 ```mermaid
----
-config:
-  flowchart:
-    curve: linear
----
-graph TD;
-	__start__([<p>__start__</p>]):::first
-	agent(agent)
-	tools(tools)
-	__end__([<p>__end__</p>]):::last
-	__start__ --> agent;
-	agent -.-> __end__;
-	agent -.-> tools;
-	tools --> agent;
-	classDef default fill:#f2f0ff,line-height:1.2
-	classDef first fill-opacity:0
-	classDef last fill:#bfb6fc
+flowchart TD
+    entrada([Início]) --> agente[agent]
+    agente -->|resposta final| saida([Fim])
+    agente -->|tool_calls| ferramentas[tools]
+    ferramentas --> agente
 ```
+
+*(O arquivo [`salespilot_graph.mmd`](salespilot_graph.mmd) usa a mesma forma “compatível”. A API `draw_mermaid()` do LangGraph costuma gerar frontmatter YAML, etiquetas HTML e `classDef`/`:::`, o que falha em vários renderizadores — por isso o script grava esta versão simplificada.)*
 
 | Fase | Nó | O que acontece |
 |---|---|---|
@@ -111,9 +101,10 @@ graph TD;
 
 ```
 SalesPilot-Agent-AI/
-├── Makefile                  # Atalhos: setup, run, streamlit, run-rag
+├── Makefile                  # Atalhos: setup, run, streamlit, run-rag, diagram
+├── generate_diagram.py       # Gera salespilot_graph.mmd (+ ASCII/PNG opcionais)
 ├── requirements.txt          # Dependências Python (runtime do agente)
-├── requirements-dev.txt      # fpdf2 — só para scripts/generate_demo_pdfs.py
+├── requirements-dev.txt      # fpdf2, grandalf — PDFs demo e diagrama do grafo
 ├── .env.example              # Template de configuração do ambiente
 ├── .gitignore
 ├── scripts/
@@ -150,7 +141,7 @@ SalesPilot-Agent-AI/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/SalesPilot-Agent-AI.git
+git clone https://github.com/LippeOli/SalesPilot-Agent-AI.git
 cd SalesPilot-Agent-AI
 
 # 2. Crie e ative um ambiente virtual
@@ -181,6 +172,7 @@ Requer **GNU Make** (macOS e a maioria das distros Linux já incluem). Cria/uso 
 | `make run` | CLI sem RAG (`python -m salespilot.main`). |
 | `make run-rag PDFS="arq.pdf"` | CLI com RAG; até 5 PDFs, separados por espaço entre aspas. |
 | `make streamlit` | Abre a UI Streamlit. |
+| `make diagram` | Gera `salespilot_graph.mmd` (e tenta ASCII + PNG; ver secção **Visualizar o grafo**). |
 | `make clean` | Remove `__pycache__` e `.pyc`. |
 | `make distclean` | `clean` + remove a pasta `.venv`. |
 
@@ -283,21 +275,24 @@ Vendedor: Quero fechar um notebook com 10% de desconto para Ana Souza
 
 ## Visualizar o grafo
 
-O script `generate_diagram.py` gera o diagrama do grafo LangGraph em três formatos:
+O script [`generate_diagram.py`](generate_diagram.py) (e o alvo `make diagram` no Makefile) grava **`salespilot_graph.mmd`** num formato Mermaid **compatível** com [mermaid.live](https://mermaid.live) e extensões comuns (sem o YAML/HTML/`classDef` que a função `draw_mermaid()` do LangGraph costuma emitir). O diagrama ASCII e o PNG opcional continuam a usar a API do LangGraph sobre o grafo real (`build_graph()`).
 
 ```bash
-# Instale a dependência para o diagrama ASCII (uma vez só)
+# Opcional: ASCII no terminal (grandalf) — também listado em requirements-dev.txt
 pip install grandalf
+# ou: pip install -r requirements-dev.txt
 
-# Gere o diagrama
 python generate_diagram.py
+# equivalente (após make setup): make diagram
 ```
+
+Opções: `python generate_diagram.py --no-png` evita chamadas HTTP; `--no-ascii` não imprime o ASCII no terminal.
 
 | Saída | Formato | Como visualizar |
 |---|---|---|
-| Terminal | ASCII | Exibido direto no terminal |
+| Terminal | ASCII | Exibido direto (requer `grandalf`). |
 | `salespilot_graph.mmd` | Mermaid | Abra no VS Code com a extensão **Mermaid Preview**, ou cole em [mermaid.live](https://mermaid.live) |
-| `salespilot_graph.png` | PNG | Requer internet — gerado automaticamente via mermaid.ink API |
+| `salespilot_graph.png` | PNG | Gerado quando a API **mermaid.ink** responde (rede). Se falhar, exporte PNG a partir do `.mmd` no mermaid.live. |
 
 ---
 
